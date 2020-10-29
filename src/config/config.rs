@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 use std::error::Error;
 use std::env;
 
+use super::config_error::ConfigError;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -9,12 +10,6 @@ pub struct Config {
     cycle_duration: i32,
     short_break: i32,
     long_break: i32,
-}
-
-#[derive(Debug)]
-pub enum ConfigError {
-    FileNotFound,
-    BadConfiguration,
 }
 
 impl Config {
@@ -32,6 +27,7 @@ impl Config {
         }
     }
 }
+
 impl TryFrom<&str> for Config {
     type Error = ConfigError;
     fn try_from(buffer: &str) -> Result<Self, Self::Error> {
@@ -44,23 +40,3 @@ impl TryFrom<&str> for Config {
     }
 }
 
-impl From<toml::de::Error> for ConfigError {
-    fn from(_: toml::de::Error) -> Self {
-        ConfigError::BadConfiguration
-    }
-}
-
-impl std::fmt::Display for ConfigError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ConfigError::BadConfiguration => write!(f, "Bad configuration file"),
-            ConfigError::FileNotFound => write!(f, "Could not find the configuration file"),
-        }
-    }
-}
-
-impl Error for ConfigError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        Some(self)
-    }
-}
