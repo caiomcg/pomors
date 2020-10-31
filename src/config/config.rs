@@ -1,6 +1,5 @@
 use std::convert::TryFrom;
-use std::error::Error;
-use std::env;
+use std::env::var;
 
 use super::config_error::ConfigError;
 use serde::Deserialize;
@@ -13,15 +12,15 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn guess_path() -> Result<String, Box<dyn Error>> {
-        match env::var("POMORS_CONFIG") {
+    pub fn guess_path() -> Result<String, ConfigError> {
+        match var("POMORS_CONFIG") {
             Ok(val) => Ok(val),
             Err(e) => {
                 if let Some(mut path) = dirs::config_dir() {
                     path.push("pomors.toml");
                     Ok(String::from(path.to_str().unwrap()))
                 } else {
-                    Err(Box::new(e))
+                    Err(e.into())
                 }
             },
         }
@@ -30,13 +29,9 @@ impl Config {
 
 impl TryFrom<&str> for Config {
     type Error = ConfigError;
-    fn try_from(buffer: &str) -> Result<Self, Self::Error> {
-        let config: Result<Config, toml::de::Error> = toml::from_str(buffer);
 
-        match config {
-            Ok(c) => Ok(c),
-            Err(e) => Err(ConfigError::from(e)),
-        }
+    fn try_from(buffer: &str) -> Result<Self, Self::Error> {
+        Ok(toml::from_str::<Config>(buffer)?)
     }
 }
 
